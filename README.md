@@ -29,7 +29,7 @@ Raylib is downloaded automatically with via CMake.
 ## Build
 
 ```bash
-git clone 
+git clone https://github.com/Zank613/atomic2d.git
 cd atomic2d
 
 mkdir build
@@ -42,6 +42,11 @@ cmake --build .
 ```bash
 ./atomic2d
 ```
+
+## Screenshots
+
+![Atomic Linux](atomic_linux_ss.png)
+![Atomic Win32](atomic_win_ss.png)
 
 ## Note
 
