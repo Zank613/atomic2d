@@ -44,7 +44,7 @@ cmake --build .
 ```
 
 ## Screenshots
-
+![Atomic Linux](atomic2d.gif)
 ![Atomic Linux](atomic_linux_ss.png)
 ![Atomic Win32](atomic_win_ss.png)
 
