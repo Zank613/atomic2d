@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <cstdio>
 
 #include "raylib.h"
 
@@ -130,7 +131,7 @@ void DrawAtomInfo(const Atom& atom, Vector2 center);
 /**
  * Draws the side control panel.
  */
-void DrawSidePanel(Atom& atom, bool& electronsChanged);
+void DrawSidePanel(Atom& atom, bool& electronsChanged, bool& screenshotRequested);
 
 /**
  * Draws a clickable button.
@@ -156,8 +157,6 @@ int main()
     SetTargetFPS(60);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
 
-    SetWindowIcon(LoadImage("atomic_pic.png"));
-
     if (!LoadElements("elements.txt"))
     {
         TraceLog(LOG_ERROR, "Failed to load elements.txt");
@@ -170,12 +169,26 @@ int main()
 
     GenerateElectronCloud(atom);
 
+    int screenshotCounter = 1;
+    float screenshotSavedTimer = 0.0f;
+    std::string screenshotSavedText;
+
     while (!WindowShouldClose())
     {
         const float dt = GetFrameTime();
         bool electronsChanged = false;
+        bool screenshotRequested = false;
 
         UpdateElectrons(atom, dt);
+
+        if (screenshotSavedTimer > 0.0f)
+        {
+            screenshotSavedTimer -= dt;
+            if (screenshotSavedTimer < 0.0f)
+            {
+                screenshotSavedTimer = 0.0f;
+            }
+        }
 
         BeginDrawing();
         {
@@ -189,13 +202,36 @@ int main()
             };
 
             DrawAtom(atom, atomCenter);
-            DrawSidePanel(atom, electronsChanged);
+            DrawSidePanel(atom, electronsChanged, screenshotRequested);
+
+            if (screenshotSavedTimer > 0.0f)
+            {
+                DrawText(
+                    screenshotSavedText.c_str(),
+                    24,
+                    GetScreenHeight() - 40,
+                    20,
+                    GREEN
+                );
+            }
         }
         EndDrawing();
 
         if (electronsChanged)
         {
             GenerateElectronCloud(atom);
+        }
+
+        if (screenshotRequested)
+        {
+            char fileName[64];
+            std::snprintf(fileName, sizeof(fileName), "screenshot_%03d.png", screenshotCounter);
+            screenshotCounter++;
+
+            TakeScreenshot(fileName);
+
+            screenshotSavedText = std::string("Saved ") + fileName;
+            screenshotSavedTimer = 2.0f;
         }
     }
 
@@ -511,7 +547,7 @@ void DrawAtom(const Atom& atom, Vector2 center)
     DrawAtomInfo(atom, center);
 }
 
-void DrawSidePanel(Atom& atom, bool& electronsChanged)
+void DrawSidePanel(Atom& atom, bool& electronsChanged, bool& screenshotRequested)
 {
     const float panelX = static_cast<float>(GetScreenWidth()) - PANEL_WIDTH;
 
@@ -554,6 +590,7 @@ void DrawSidePanel(Atom& atom, bool& electronsChanged)
     const Rectangle resetButton = { startX, y, 220.0f, 44.0f };
     const Rectangle neutralButton = { startX, y + 58.0f, 220.0f, 44.0f };
     const Rectangle randomButton = { startX, y + 116.0f, 220.0f, 44.0f };
+    const Rectangle screenshotButton = { startX, y + 174.0f, 220.0f, 44.0f };
 
     if (GuiButton(resetButton, "Reset"))
     {
@@ -577,36 +614,41 @@ void DrawSidePanel(Atom& atom, bool& electronsChanged)
         electronsChanged = true;
     }
 
+    if (GuiButton(screenshotButton, "Save Screenshot"))
+    {
+        screenshotRequested = true;
+    }
+
     const int charge = atom.protons - atom.electrons;
     const int massNumber = atom.protons + atom.neutrons;
     const Element* element = GetElement(atom.protons);
 
-    DrawText("Summary", static_cast<int>(startX), static_cast<int>(y + 190.0f), 24, RAYWHITE);
+    DrawText("Summary", static_cast<int>(startX), static_cast<int>(y + 245.0f), 24, RAYWHITE);
 
     if (element != nullptr)
     {
         DrawText(
             TextFormat("Element: %s (%s)", element->name.c_str(), element->symbol.c_str()),
             static_cast<int>(startX),
-            static_cast<int>(y + 225.0f),
+            static_cast<int>(y + 280.0f),
             22,
             GOLD
         );
     }
     else
     {
-        DrawText("Element: Unknown", static_cast<int>(startX), static_cast<int>(y + 225.0f), 22, GOLD);
+        DrawText("Element: Unknown", static_cast<int>(startX), static_cast<int>(y + 280.0f), 22, GOLD);
     }
 
-    DrawText(TextFormat("Mass: %d", massNumber), static_cast<int>(startX), static_cast<int>(y + 253.0f), 22, RAYWHITE);
-    DrawText(TextFormat("Charge: %+d", charge), static_cast<int>(startX), static_cast<int>(y + 281.0f), 22, RAYWHITE);
+    DrawText(TextFormat("Mass: %d", massNumber), static_cast<int>(startX), static_cast<int>(y + 308.0f), 22, RAYWHITE);
+    DrawText(TextFormat("Charge: %+d", charge), static_cast<int>(startX), static_cast<int>(y + 336.0f), 22, RAYWHITE);
 
     if (element != nullptr)
     {
         const Rectangle linkRect =
         {
             startX,
-            y + 322.0f,
+            y + 377.0f,
             220.0f,
             28.0f
         };
